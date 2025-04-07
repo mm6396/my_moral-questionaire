@@ -6,10 +6,6 @@ import os
 # Load questions
 df = pd.read_csv("questions.csv")
 
-# Import extras
-from streamlit_extras.progress_bar import progress_bar
-from streamlit_extras.let_it_rain import rain
-
 # Initialize session state variables
 if 'page' not in st.session_state:
     st.session_state.page = 0
@@ -39,7 +35,7 @@ if st.session_state.page == 0:
 
     st.session_state.culture = st.selectbox(
         "Select your culture:",
-        ["Chinese", "American", "Indian","Korean", "Persian", "Arabic", "African", "Japanese"]
+        ["Chinese", "American", "Indian", "Iranian", "Korean", "Persian", "Arabic", "African", "Japanese"]
     )
 
     st.session_state.gender = st.selectbox(
@@ -49,7 +45,7 @@ if st.session_state.page == 0:
 
     if st.button("Start Questionnaire"):
         if st.session_state.username.strip() == "":
-            st.error("❗ Please enter a username before proceeding.")
+            st.error(" ** Please enter a username before proceeding.")
         else:
             # If progress file exists, load progress
             progress_file = f"{st.session_state.username}_progress.csv"
@@ -66,19 +62,20 @@ if st.session_state.page == 0:
 else:
     if st.session_state.page > len(df):
         st.success("Thank you! You have completed all questions.")
-        rain(emoji="🎉", font_size=40, falling_speed=5, animation_length="infinite")
+        st.balloons()
         st.stop()
 
     # Show user info
     st.markdown(f"**Username:** {st.session_state.username} | **Culture:** {st.session_state.culture} | **Gender:** {st.session_state.gender}")
 
-    # Progress Ring
+    # Progress Bar
     total_questions = len(df)
     current_question = st.session_state.page
     progress_percentage = int((current_question / total_questions) * 100)
 
     st.markdown(f"**Progress:** {progress_percentage}% complete")
-    progress_bar(progress_percentage)
+    progress = st.progress(0)
+    progress.progress(progress_percentage / 100)
 
     st.markdown("---")
 
@@ -124,6 +121,5 @@ else:
         if st.button("Save & Exit"):
             results_df = pd.DataFrame(st.session_state.responses)
             results_df.to_csv(f"{st.session_state.username}_progress.csv", index=False)
-            rain(emoji="🌟", font_size=30, falling_speed=5, animation_length="infinite")
             st.success("Progress saved! You can return anytime to continue.")
             st.stop()
