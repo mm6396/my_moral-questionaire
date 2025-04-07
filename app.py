@@ -55,7 +55,7 @@ if st.session_state.page == 0:
                     completed_counter[key] += 1
                     completed_users += 1
             except Exception as e:
-                st.warning(f"Could not read file {file}: {e}")
+                # st.warning(f"Could not read file {file}: {e}")
                 continue
 
     # # Overall stats
@@ -65,7 +65,7 @@ if st.session_state.page == 0:
 
     # Detail
     st.subheader("Detailed information about Participation (Culture + Gender)")
-    cultures = ["Chinese", "American", "Indian", "Iranian", "Korean", "Persian", "Arabic", "African", "Japanese"]
+    cultures = ["Chinese", "American", "Indian", "Korean", "Persian", "Arabic", "African", "Japanese"]
     genders = ["Male", "Female"]
 
     for culture in cultures:
