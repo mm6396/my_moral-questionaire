@@ -79,16 +79,16 @@ if st.session_state.page == 0:
 # -----------------------------------
 # Download Progress File if exists
 # -----------------------------------
-progress_file = f"{st.session_state.username}_progress.csv"
+    progress_file = f"{st.session_state.username}_progress.csv"
 
-if st.session_state.username and os.path.exists(progress_file):
-    with open(progress_file, "rb") as f:
-        st.download_button(
-            label="⬇️ Download My Progress File",
-            data=f,
-            file_name=progress_file,
-            mime="text/csv"
-        )
+    if st.session_state.username and os.path.exists(progress_file):
+        with open(progress_file, "rb") as f:
+            st.download_button(
+                label="⬇️ Download My Progress File",
+                data=f,
+                file_name=progress_file,
+                mime="text/csv"
+            )
 
     st.markdown("---")
 
