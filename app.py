@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import os
 from collections import defaultdict
+import zipfile
 
 
 TOTAL_QUESTIONS = 680
@@ -75,22 +76,30 @@ if st.session_state.page == 0:
             if started > 0 or completed > 0:
                 st.write(f"**{culture} - {gender}:** Started: {started} | Completed: {completed}")
                 
-                
-# -----------------------------------
-# Download Progress File if exists
-# -----------------------------------
-    progress_file = f"{st.session_state.username}_progress.csv"
 
-    if st.session_state.username and os.path.exists(progress_file):
-        with open(progress_file, "rb") as f:
-            st.download_button(
-                label="⬇️ Download My Progress File",
-                data=f,
-                file_name=progress_file,
-                mime="text/csv"
-            )
 
     st.markdown("---")
+    
+    # ------------------- Admin Download All Progress Files -------------------
+    progress_files = [f for f in os.listdir() if f.endswith('_progress.csv')]
+
+    if progress_files:
+        # Create a ZIP file
+        zip_filename = "all_progress_files.zip"
+        with zipfile.ZipFile(zip_filename, 'w') as zipf:
+            for file in progress_files:
+                zipf.write(file)
+
+        
+        with open(zip_filename, "rb") as f:
+            st.download_button(
+                label="⬇️ Download All Progress Files (ZIP)",
+                data=f,
+                file_name=zip_filename,
+                mime="application/zip"
+            )
+    else:
+        st.info("No progress files found.")
 
     # ------------------- User Login -------------------
     st.header("Step 1: Your Information")
