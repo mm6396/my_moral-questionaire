@@ -1,11 +1,12 @@
 import streamlit as st
 import pandas as pd
 import datetime
+import os
 
-
+# Load questions
 df = pd.read_csv("questions.csv")
 
-
+# Initialize session states
 if 'page' not in st.session_state:
     st.session_state.page = 0
 
@@ -21,8 +22,34 @@ if 'gender' not in st.session_state:
 if 'current_choice' not in st.session_state:
     st.session_state.current_choice = ""
 
+if 'username' not in st.session_state:
+    st.session_state.username = ""
 
-if st.session_state.page == 0:
+# Step 0: Login / Username
+if st.session_state.username == "":
+    st.title("Moral Choice Annotation")
+
+    username_input = st.text_input("Enter your username (no password needed):")
+
+    if st.button("Login"):
+        if username_input.strip() != "":
+            st.session_state.username = username_input.strip()
+
+            # Check if this user already has progress
+            progress_file = f"{st.session_state.username}_progress.csv"
+            if os.path.exists(progress_file):
+                progress_df = pd.read_csv(progress_file)
+                st.session_state.responses = progress_df.to_dict(orient='records')
+                st.session_state.page = len(st.session_state.responses) + 1
+                if len(progress_df) > 0:
+                    st.session_state.culture = progress_df.iloc[0]['culture']
+                    st.session_state.gender = progress_df.iloc[0]['gender']
+            else:
+                st.session_state.page = 0
+            st.rerun()
+
+# Step 1: Collect user info
+elif st.session_state.page == 0:
     st.title("Moral Choice Annotation")
 
     st.header("Step 1: Your Information")
@@ -41,9 +68,13 @@ if st.session_state.page == 0:
         st.session_state.page = 1
         st.rerun()
 
-
+# Step 2: Show questions
 else:
     st.title(f"Question {st.session_state.page}")
+
+    if st.session_state.page > len(df):
+        st.success("Thank you! Your answers have been recorded 🙏")
+        st.stop()
 
     current_row = df.iloc[st.session_state.page - 1]
 
@@ -69,13 +100,9 @@ else:
                 "selected_action": st.session_state.current_choice,
             })
 
-            st.session_state.page += 1
+            # Save progress
+            results_df = pd.DataFrame(st.session_state.responses)
+            results_df.to_csv(f"{st.session_state.username}_progress.csv", index=False)
 
-            if st.session_state.page > len(df):
-                results_df = pd.DataFrame(st.session_state.responses)
-                timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-                results_df.to_csv(f"annotation_results_{timestamp}.csv", index=False)
-                st.success("Thank you! Your answers have been recorded 🙏")
-                st.stop()
-            else:
-                st.rerun()
+            st.session_state.page += 1
+            st.rerun()
