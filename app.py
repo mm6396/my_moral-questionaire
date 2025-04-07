@@ -18,6 +18,9 @@ if 'culture' not in st.session_state:
 if 'gender' not in st.session_state:
     st.session_state.gender = None
 
+if 'current_choice' not in st.session_state:
+    st.session_state.current_choice = ""
+
 
 if st.session_state.page == 0:
     st.title("Moral Choice Annotation")
@@ -25,17 +28,17 @@ if st.session_state.page == 0:
     st.header("Step 1: Your Information")
 
     st.session_state.culture = st.selectbox(
-        "Select your culture:", 
+        "Select your culture:",
         ["Chinese", "American", "Indian", "Iranian", "Korean", "Persian", "Arabic", "African", "Japanese"]
     )
 
     st.session_state.gender = st.selectbox(
-        "Please select your gender:", 
+        "Please select your gender:",
         ["Male", "Female"]
     )
 
     if st.button("Start Questionnaire"):
-        st.session_state.page += 1
+        st.session_state.page = 1
         st.rerun()
 
 
@@ -48,30 +51,31 @@ else:
     st.write(f"**Action 1:** {current_row['action1']}")
     st.write(f"**Action 2:** {current_row['action2']}")
 
-    choice = st.radio(
+    st.session_state.current_choice = st.radio(
         "Which action is more moral?",
         ("", "Action 1", "Action 2"),
-        index=0
+        index=0,
+        key=f"choice_{st.session_state.page}"
     )
 
-    if choice != "":
-        st.session_state.responses.append({
-            "culture": st.session_state.culture,
-            "gender": st.session_state.gender,
-            "context": current_row['context'],
-            "action1": current_row['action1'],
-            "action2": current_row['action2'],
-            "selected_action": choice,
-        })
+    if st.session_state.current_choice != "":
+        if st.button("Next Question"):
+            st.session_state.responses.append({
+                "culture": st.session_state.culture,
+                "gender": st.session_state.gender,
+                "context": current_row['context'],
+                "action1": current_row['action1'],
+                "action2": current_row['action2'],
+                "selected_action": st.session_state.current_choice,
+            })
 
-        st.session_state.page += 1
+            st.session_state.page += 1
 
-        if st.session_state.page > len(df):
-            
-            results_df = pd.DataFrame(st.session_state.responses)
-            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-            results_df.to_csv(f"annotation_results_{timestamp}.csv", index=False)
-            st.success("Thank you! Your answers have been recorded")
-            st.stop()
-        else:
-            st.rerun()
+            if st.session_state.page > len(df):
+                results_df = pd.DataFrame(st.session_state.responses)
+                timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+                results_df.to_csv(f"annotation_results_{timestamp}.csv", index=False)
+                st.success("Thank you! Your answers have been recorded 🙏")
+                st.stop()
+            else:
+                st.rerun()
