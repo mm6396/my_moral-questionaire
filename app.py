@@ -3,7 +3,7 @@ import pandas as pd
 import os
 from collections import defaultdict
 
-# تعداد کل سوالات
+
 TOTAL_QUESTIONS = 680
 
 # Load questions
@@ -43,7 +43,7 @@ if st.session_state.page == 0:
     completed_counter = defaultdict(int)
 
     for file in progress_files:
-        if os.path.getsize(file) > 0:  # فقط فایل‌هایی که خالی نیستن
+        if os.path.getsize(file) > 0:  
             try:
                 df_progress = pd.read_csv(file)
                 if len(df_progress) > 0:
@@ -58,13 +58,13 @@ if st.session_state.page == 0:
                 st.warning(f"Could not read file {file}: {e}")
                 continue
 
-    # Overall stats
-    st.info(f"**Total Users Started:** {total_users}")
-    st.success(f"**Users Completed Questionnaire:** {completed_users}")
-    st.markdown("---")
+    # # Overall stats
+    # st.info(f"**Total Users Started:** {total_users}")
+    # st.success(f"**Users Completed Questionnaire:** {completed_users}")
+    # st.markdown("---")
 
-    # Detailed stats
-    st.subheader("🔎 Detailed Participation (Culture + Gender)")
+    # Detail
+    st.subheader("Detailed information about Participation (Culture + Gender)")
     cultures = ["Chinese", "American", "Indian", "Iranian", "Korean", "Persian", "Arabic", "African", "Japanese"]
     genders = ["Male", "Female"]
 
