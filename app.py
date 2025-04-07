@@ -1,12 +1,14 @@
 import streamlit as st
 import pandas as pd
-import datetime
 import os
+
+# تعداد کل سوالات
+TOTAL_QUESTIONS = 680
 
 # Load questions
 df = pd.read_csv("questions.csv")
 
-# Initialize session state
+# Initialize session state variables
 if 'page' not in st.session_state:
     st.session_state.page = 0
 
@@ -29,43 +31,76 @@ if 'current_choice' not in st.session_state:
 if st.session_state.page == 0:
     st.title("Moral Choice Annotation")
 
+    st.header("Current Participation Statistics")
+
+    progress_files = [f for f in os.listdir() if f.endswith('_progress.csv')]
+    total_users = len(progress_files)
+    completed_users = 0
+
+    from collections import defaultdict
+
+    # Dictionary for counts
+    started_counter = defaultdict(int)
+    completed_counter = defaultdict(int)
+
+    for file in progress_files:
+        df_progress = pd.read_csv(file)
+        if len(df_progress) > 0:
+            key = (df_progress.iloc[0]['culture'], df_progress.iloc[0]['gender'])
+            started_counter[key] += 1
+
+        if len(df_progress) == TOTAL_QUESTIONS:
+            key = (df_progress.iloc[0]['culture'], df_progress.iloc[0]['gender'])
+            completed_counter[key] += 1
+            completed_users += 1
+
+    # Overall stats
+    st.info(f"Total Users Started: **{total_users}**")
+    st.success(f"Users Completed Questionnaire: **{completed_users}**")
+    st.markdown("---")
+
+    # Detailed stats
+    st.subheader("🔎 Detailed by Culture and Gender")
+
+    cultures = ["Chinese", "American", "Indian", "Iranian", "Korean", "Persian", "Arabic", "African", "Japanese"]
+    genders = ["Male", "Female"]
+
+    for culture in cultures:
+        for gender in genders:
+            started = started_counter.get((culture, gender), 0)
+            completed = completed_counter.get((culture, gender), 0)
+            st.write(f"**{culture} - {gender}:** Started: {started} | Completed: {completed}")
+
+    st.markdown("---")
+
     st.header("Step 1: Your Information")
 
     st.session_state.username = st.text_input("Enter your username:")
 
     st.session_state.culture = st.selectbox(
         "Select your culture:",
-        ["Chinese", "American", "Indian", "Korean", "Persian", "Arabic", "African", "Japanese"]
+        cultures
     )
 
     st.session_state.gender = st.selectbox(
         "Select your gender:",
-        ["Male", "Female"]
+        genders
     )
 
     if st.button("Start Questionnaire"):
         if st.session_state.username.strip() == "":
-            st.error("❗ Please enter a username before proceeding.")
+            st.error("Please enter a username before proceeding.")
         else:
             progress_file = f"{st.session_state.username}_progress.csv"
             if os.path.exists(progress_file):
-                # username exists, load and check culture/gender
                 progress_df = pd.read_csv(progress_file)
-                saved_culture = progress_df.iloc[0]['culture']
-                saved_gender = progress_df.iloc[0]['gender']
-
-                if (st.session_state.culture != saved_culture) or (st.session_state.gender != saved_gender):
-                    st.error(f"This username is already registered with culture '{saved_culture}' and gender '{saved_gender}'. Please match exactly or choose a new username.")
-                elif len(progress_df) >= len(df):
-                    st.error("This username has already completed the questionnaire. Please choose a different username.")
-                else:
-                    st.session_state.responses = progress_df.to_dict('records')
-                    st.session_state.page = len(progress_df) + 1
-                    st.success(f"Welcome back {st.session_state.username}! Continuing from Question {st.session_state.page}.")
-                    st.rerun()
+                st.session_state.responses = progress_df.to_dict('records')
+                st.session_state.page = len(progress_df) + 1
+                st.success(f"Welcome back {st.session_state.username}! Continuing from Question {st.session_state.page}.")
             else:
-                st.session_state.page = 1
-                st.rerun()
+                st.session_state.page = 1  # New user
+            st.rerun()
+
 
 # ---------------------- Step 2: Questionnaire -----------------------
 else:
@@ -74,12 +109,13 @@ else:
         st.balloons()
         st.stop()
 
+    # Show user info
     st.markdown(f"**Username:** {st.session_state.username} | **Culture:** {st.session_state.culture} | **Gender:** {st.session_state.gender}")
 
+    # Progress Bar
     total_questions = len(df)
-    answered_questions = len(st.session_state.responses)
-    progress_percentage = int((answered_questions / total_questions) * 100)
-
+    current_question = st.session_state.page
+    progress_percentage = int((current_question / total_questions) * 100)
 
     st.markdown(f"**Progress:** {progress_percentage}% complete")
     progress = st.progress(0)
@@ -87,6 +123,7 @@ else:
 
     st.markdown("---")
 
+ 
     st.title(f"Question {st.session_state.page}")
 
     current_row = df.iloc[st.session_state.page - 1]
@@ -117,6 +154,7 @@ else:
                     "selected_action": choice,
                 })
 
+                # Save progress
                 results_df = pd.DataFrame(st.session_state.responses)
                 results_df.to_csv(f"{st.session_state.username}_progress.csv", index=False)
 
@@ -124,8 +162,8 @@ else:
                 st.rerun()
 
     with col2:
-        if st.button("Save & Exit"):
+        if st.button("Save & Exit!"):
             results_df = pd.DataFrame(st.session_state.responses)
             results_df.to_csv(f"{st.session_state.username}_progress.csv", index=False)
-            st.success(" Progress saved! You can return anytime to continue.")
+            st.success("Progress saved! You can return anytime to continue.")
             st.stop()
