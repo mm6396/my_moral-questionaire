@@ -77,8 +77,9 @@ else:
     st.markdown(f"**Username:** {st.session_state.username} | **Culture:** {st.session_state.culture} | **Gender:** {st.session_state.gender}")
 
     total_questions = len(df)
-    current_question = st.session_state.page
-    progress_percentage = int((current_question / total_questions) * 100)
+    answered_questions = len(st.session_state.responses)
+    progress_percentage = int((answered_questions / total_questions) * 100)
+
 
     st.markdown(f"**Progress:** {progress_percentage}% complete")
     progress = st.progress(0)
