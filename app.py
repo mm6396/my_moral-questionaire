@@ -74,6 +74,21 @@ if st.session_state.page == 0:
             completed = completed_counter.get((culture, gender), 0)
             if started > 0 or completed > 0:
                 st.write(f"**{culture} - {gender}:** Started: {started} | Completed: {completed}")
+                
+                
+# -----------------------------------
+# Download Progress File if exists
+# -----------------------------------
+progress_file = f"{st.session_state.username}_progress.csv"
+
+if st.session_state.username and os.path.exists(progress_file):
+    with open(progress_file, "rb") as f:
+        st.download_button(
+            label="⬇️ Download My Progress File",
+            data=f,
+            file_name=progress_file,
+            mime="text/csv"
+        )
 
     st.markdown("---")
 
