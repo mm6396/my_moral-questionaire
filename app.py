@@ -45,18 +45,23 @@ if st.session_state.page == 0:
 
     if st.button("Start Questionnaire"):
         if st.session_state.username.strip() == "":
-            st.error(" ** Please enter a username before proceeding.")
+            st.error("Please enter a username before proceeding.")
         else:
-            # If progress file exists, load progress
             progress_file = f"{st.session_state.username}_progress.csv"
             if os.path.exists(progress_file):
+                # username exists, check how much completed
                 progress_df = pd.read_csv(progress_file)
-                st.session_state.responses = progress_df.to_dict('records')
-                st.session_state.page = len(progress_df) + 1
-                st.success(f"Welcome back {st.session_state.username}! Continuing from Question {st.session_state.page}.")
+                if len(progress_df) >= len(df):
+                    st.error("This username has already completed the questionnaire. Please choose a different username.")
+                else:
+                    st.session_state.responses = progress_df.to_dict('records')
+                    st.session_state.page = len(progress_df) + 1
+                    st.success(f"Welcome back {st.session_state.username}! Continuing from Question {st.session_state.page}.")
+                    st.rerun()
             else:
-                st.session_state.page = 1  # New user
-            st.rerun()
+                # new username
+                st.session_state.page = 1
+                st.rerun()
 
 # ---------------------- Step 2: Questionnaire -----------------------
 else:
@@ -110,7 +115,7 @@ else:
                     "selected_action": choice,
                 })
 
-                # Save progress
+                
                 results_df = pd.DataFrame(st.session_state.responses)
                 results_df.to_csv(f"{st.session_state.username}_progress.csv", index=False)
 
