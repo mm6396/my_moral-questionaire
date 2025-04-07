@@ -3,7 +3,7 @@ import pandas as pd
 import datetime
 
 
-df = pd.read_csv("questions.csv")  
+df = pd.read_csv("questions.csv")
 
 
 if 'page' not in st.session_state:
@@ -18,6 +18,7 @@ if 'culture' not in st.session_state:
 if 'gender' not in st.session_state:
     st.session_state.gender = None
 
+
 if st.session_state.page == 0:
     st.title("Moral Choice Annotation")
 
@@ -25,10 +26,11 @@ if st.session_state.page == 0:
 
     st.session_state.culture = st.selectbox(
         "Select your culture:", 
-        ["Chinese", "American", "Indian", "Iranian", "Korean", "Persian" , "Arabic" , "African", "Japanese"]
+        ["Chinese", "American", "Indian", "Iranian", "Korean", "Persian", "Arabic", "African", "Japanese"]
     )
+
     st.session_state.gender = st.selectbox(
-        "Please Select your gender:", 
+        "Please select your gender:", 
         ["Male", "Female"]
     )
 
@@ -52,7 +54,7 @@ else:
         index=0
     )
 
-    if choice != "":  
+    if choice != "":
         st.session_state.responses.append({
             "culture": st.session_state.culture,
             "gender": st.session_state.gender,
@@ -61,15 +63,15 @@ else:
             "action2": current_row['action2'],
             "selected_action": choice,
         })
-        
+
         st.session_state.page += 1
 
         if st.session_state.page > len(df):
-            # All questions done, save results
+            
             results_df = pd.DataFrame(st.session_state.responses)
             timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
             results_df.to_csv(f"annotation_results_{timestamp}.csv", index=False)
-            st.success("Thank you! Your answers have been recorded. ")
+            st.success("Thank you! Your answers have been recorded")
             st.stop()
         else:
-            st.experimental_rerun()
+            st.rerun()
