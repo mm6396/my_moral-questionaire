@@ -34,7 +34,7 @@ if st.session_state.page == 0:
 
     if st.button("Start Questionnaire"):
         st.session_state.page += 1
-        st.experimental_rerun()
+        st.rerun()
 
 
 else:
