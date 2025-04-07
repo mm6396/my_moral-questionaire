@@ -19,62 +19,67 @@ if 'culture' not in st.session_state:
 if 'gender' not in st.session_state:
     st.session_state.gender = None
 
-if 'current_choice' not in st.session_state:
-    st.session_state.current_choice = ""
-
 if 'username' not in st.session_state:
     st.session_state.username = ""
 
-# Step 0: Login / Username
-if st.session_state.username == "":
-    st.title("Moral Choice Annotation")
+if 'logged_in' not in st.session_state:
+    st.session_state.logged_in = False
 
-    username_input = st.text_input("Enter your username (no password needed):")
+# Step 0: Login / Sign-up
+if not st.session_state.logged_in:
+    st.title("Moral Choice Annotation - Login")
 
-    if st.button("Login"):
-        if username_input.strip() != "":
-            st.session_state.username = username_input.strip()
+    st.header("Please Enter Your Information")
 
-            # Check if this user already has progress
-            progress_file = f"{st.session_state.username}_progress.csv"
-            if os.path.exists(progress_file):
-                progress_df = pd.read_csv(progress_file)
-                st.session_state.responses = progress_df.to_dict(orient='records')
-                st.session_state.page = len(st.session_state.responses) + 1
-                if len(progress_df) > 0:
-                    st.session_state.culture = progress_df.iloc[0]['culture']
-                    st.session_state.gender = progress_df.iloc[0]['gender']
-            else:
-                st.session_state.page = 0
-            st.rerun()
-
-# Step 1: Collect user info
-elif st.session_state.page == 0:
-    st.title("Moral Choice Annotation")
-
-    st.header("Step 1: Your Information")
-
-    st.session_state.culture = st.selectbox(
-        "Select your culture:",
+    username_input = st.text_input("Username:")
+    culture_input = st.selectbox(
+        "Culture:",
         ["Chinese", "American", "Indian", "Iranian", "Korean", "Persian", "Arabic", "African", "Japanese"]
     )
-
-    st.session_state.gender = st.selectbox(
-        "Please select your gender:",
+    gender_input = st.selectbox(
+        "Gender:",
         ["Male", "Female"]
     )
 
-    if st.button("Start Questionnaire"):
-        st.session_state.page = 1
-        st.rerun()
+    if st.button("Start"):
+        if username_input.strip() == "":
+            st.error("Username cannot be empty.")
+        else:
+            progress_file = f"{username_input.strip()}_progress.csv"
+            if os.path.exists(progress_file):
+                # Existing user - validate culture and gender
+                progress_df = pd.read_csv(progress_file)
+                saved_culture = progress_df.iloc[0]['culture']
+                saved_gender = progress_df.iloc[0]['gender']
 
-# Step 2: Show questions
+                if saved_culture != culture_input or saved_gender != gender_input:
+                    st.error("Culture or Gender does not match your previous records. Please check.")
+                else:
+                    st.success("Welcome back! Resuming your questionnaire...")
+                    st.session_state.username = username_input.strip()
+                    st.session_state.culture = saved_culture
+                    st.session_state.gender = saved_gender
+                    st.session_state.responses = progress_df.to_dict(orient='records')
+                    st.session_state.page = len(progress_df) + 1
+                    st.session_state.logged_in = True
+                    st.rerun()
+            else:
+                # New user
+                st.success("Welcome! Starting new questionnaire.")
+                st.session_state.username = username_input.strip()
+                st.session_state.culture = culture_input
+                st.session_state.gender = gender_input
+                st.session_state.page = 1
+                st.session_state.logged_in = True
+                st.rerun()
+
+
 else:
-    st.title(f"Question {st.session_state.page}")
-
     if st.session_state.page > len(df):
-        st.success("Thank you! Your answers have been recorded 🙏")
+        st.success("Thank you! You have completed all questions.")
         st.stop()
+
+    st.title(f"Question {st.session_state.page}")
 
     current_row = df.iloc[st.session_state.page - 1]
 
@@ -82,27 +87,37 @@ else:
     st.write(f"**Action 1:** {current_row['action1']}")
     st.write(f"**Action 2:** {current_row['action2']}")
 
-    st.session_state.current_choice = st.radio(
+    choice = st.radio(
         "Which action is more moral?",
         ("", "Action 1", "Action 2"),
         index=0,
         key=f"choice_{st.session_state.page}"
     )
 
-    if st.session_state.current_choice != "":
-        if st.button("Next Question"):
-            st.session_state.responses.append({
-                "culture": st.session_state.culture,
-                "gender": st.session_state.gender,
-                "context": current_row['context'],
-                "action1": current_row['action1'],
-                "action2": current_row['action2'],
-                "selected_action": st.session_state.current_choice,
-            })
+    col1, col2 = st.columns(2)
 
-            # Save progress
+    with col1:
+        if choice != "":
+            if st.button("Next Question"):
+                st.session_state.responses.append({
+                    "username": st.session_state.username,
+                    "culture": st.session_state.culture,
+                    "gender": st.session_state.gender,
+                    "context": current_row['context'],
+                    "action1": current_row['action1'],
+                    "action2": current_row['action2'],
+                    "selected_action": choice,
+                })
+
+                results_df = pd.DataFrame(st.session_state.responses)
+                results_df.to_csv(f"{st.session_state.username}_progress.csv", index=False)
+
+                st.session_state.page += 1
+                st.rerun()
+
+    with col2:
+        if st.button("Save & Exit"):
             results_df = pd.DataFrame(st.session_state.responses)
             results_df.to_csv(f"{st.session_state.username}_progress.csv", index=False)
-
-            st.session_state.page += 1
-            st.rerun()
+            st.success("Progress saved! You can come back later to continue.")
+            st.stop()
