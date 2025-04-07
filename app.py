@@ -3,7 +3,7 @@ import pandas as pd
 import datetime
 
 
-df = pd.read_csv("moralchoice_high_ambiguity.csv")  
+df = pd.read_csv("questions.csv")  
 
 
 if 'page' not in st.session_state:
