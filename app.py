@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import os
+from collections import defaultdict
 
 # تعداد کل سوالات
 TOTAL_QUESTIONS = 680
@@ -34,34 +35,36 @@ if st.session_state.page == 0:
     st.header("Current Participation Statistics")
 
     progress_files = [f for f in os.listdir() if f.endswith('_progress.csv')]
-    total_users = len(progress_files)
+    total_users = 0
     completed_users = 0
 
-    from collections import defaultdict
-
-    # Dictionary for counts
+    # Dictionaries for counts
     started_counter = defaultdict(int)
     completed_counter = defaultdict(int)
 
     for file in progress_files:
-        df_progress = pd.read_csv(file)
-        if len(df_progress) > 0:
-            key = (df_progress.iloc[0]['culture'], df_progress.iloc[0]['gender'])
-            started_counter[key] += 1
+        if os.path.getsize(file) > 0:  # فقط فایل‌هایی که خالی نیستن
+            try:
+                df_progress = pd.read_csv(file)
+                if len(df_progress) > 0:
+                    key = (df_progress.iloc[0]['culture'], df_progress.iloc[0]['gender'])
+                    started_counter[key] += 1
+                    total_users += 1
 
-        if len(df_progress) == TOTAL_QUESTIONS:
-            key = (df_progress.iloc[0]['culture'], df_progress.iloc[0]['gender'])
-            completed_counter[key] += 1
-            completed_users += 1
+                if len(df_progress) == TOTAL_QUESTIONS:
+                    completed_counter[key] += 1
+                    completed_users += 1
+            except Exception as e:
+                st.warning(f"Could not read file {file}: {e}")
+                continue
 
     # Overall stats
-    st.info(f"Total Users Started: **{total_users}**")
-    st.success(f"Users Completed Questionnaire: **{completed_users}**")
+    st.info(f"**Total Users Started:** {total_users}")
+    st.success(f"**Users Completed Questionnaire:** {completed_users}")
     st.markdown("---")
 
     # Detailed stats
-    st.subheader("🔎 Detailed by Culture and Gender")
-
+    st.subheader("🔎 Detailed Participation (Culture + Gender)")
     cultures = ["Chinese", "American", "Indian", "Iranian", "Korean", "Persian", "Arabic", "African", "Japanese"]
     genders = ["Male", "Female"]
 
@@ -69,10 +72,12 @@ if st.session_state.page == 0:
         for gender in genders:
             started = started_counter.get((culture, gender), 0)
             completed = completed_counter.get((culture, gender), 0)
-            st.write(f"**{culture} - {gender}:** Started: {started} | Completed: {completed}")
+            if started > 0 or completed > 0:
+                st.write(f"**{culture} - {gender}:** Started: {started} | Completed: {completed}")
 
     st.markdown("---")
 
+    # ------------------- User Login -------------------
     st.header("Step 1: Your Information")
 
     st.session_state.username = st.text_input("Enter your username:")
@@ -93,14 +98,16 @@ if st.session_state.page == 0:
         else:
             progress_file = f"{st.session_state.username}_progress.csv"
             if os.path.exists(progress_file):
-                progress_df = pd.read_csv(progress_file)
-                st.session_state.responses = progress_df.to_dict('records')
-                st.session_state.page = len(progress_df) + 1
-                st.success(f"Welcome back {st.session_state.username}! Continuing from Question {st.session_state.page}.")
+                if os.path.getsize(progress_file) > 0:
+                    progress_df = pd.read_csv(progress_file)
+                    st.session_state.responses = progress_df.to_dict('records')
+                    st.session_state.page = len(progress_df) + 1
+                    st.success(f"Welcome back {st.session_state.username}! Continuing from Question {st.session_state.page}.")
+                else:
+                    st.session_state.page = 1
             else:
                 st.session_state.page = 1  # New user
             st.rerun()
-
 
 # ---------------------- Step 2: Questionnaire -----------------------
 else:
@@ -118,12 +125,11 @@ else:
     progress_percentage = int((current_question / total_questions) * 100)
 
     st.markdown(f"**Progress:** {progress_percentage}% complete")
-    progress = st.progress(0)
-    progress.progress(progress_percentage / 100)
+    progress = st.progress(progress_percentage / 100)
 
     st.markdown("---")
 
- 
+    # Show current question
     st.title(f"Question {st.session_state.page}")
 
     current_row = df.iloc[st.session_state.page - 1]
